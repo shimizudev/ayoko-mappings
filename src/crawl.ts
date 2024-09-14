@@ -5,7 +5,7 @@ import Anime from "./schema/anime"; // Save the info on this schema.
 import mongoose from "mongoose";
 
 const LAST_ID_FILE = "./lastId.txt";
-const CHUNK_SIZE = 10; // Process 10 IDs at a time
+const CHUNK_SIZE = 25; // Process 10 IDs at a time
 
 await mongoose.connect(process.env.MONGO_URI!);
 
