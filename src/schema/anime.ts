@@ -159,7 +159,7 @@ export interface AnimeInfo extends Document {
 const AnimeInfoSchema: Schema = new Schema({
   id: { type: Number, default: null, unique: true, sparse: true },
   idMal: { type: Number, default: null, unique: true, sparse: true },
-  slug: { type: String, default: null, unique: true, sparse: true },
+  slug: { type: String, default: null },
   title: {
     romaji: { type: String, default: "", index: true },
     english: { type: String, default: "", index: true },
@@ -320,12 +320,19 @@ const AnimeInfoSchema: Schema = new Schema({
   episodeLength: { type: Number, default: 0, index: true },
   totalLength: { type: Number, default: 0, index: true },
   youtubeVideoId: { type: String, default: "", index: true },
-  nsfw: { type: Boolean, default: false, index: true },
+  numberOfReviews: { type: Number, default: 0, index: true },
+  averageEpisodeScore: { type: Number, default: 0, index: true },
+  airingStatus: { type: String, default: "", index: true },
+  streamingStatus: { type: String, default: "", index: true },
+  tvdbId: { type: String, default: "", index: true },
 });
 
-AnimeInfoSchema.index({ id: 1, slug: 1 }, { unique: true, sparse: true });
-AnimeInfoSchema.index({ idMal: 1, title: 1 }, { unique: true, sparse: true });
-AnimeInfoSchema.index({ slug: 1, idMal: 1 }, { unique: true, sparse: true });
+AnimeInfoSchema.index({ id: 1 }, { unique: true, sparse: true });
+AnimeInfoSchema.index({ slug: 1 }, { unique: true, sparse: true });
+AnimeInfoSchema.index(
+  { slug: 1 },
+  { unique: true, partialFilterExpression: { slug: { $ne: null } } }
+);
 
 const Anime = mongoose.model<AnimeInfo>("AnimeInfo", AnimeInfoSchema);
 
