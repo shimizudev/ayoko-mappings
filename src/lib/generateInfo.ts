@@ -51,51 +51,58 @@ type AnimeInfo = MediaData & {
 };
 
 export const mergeInfo = (
-  episodes: Episode[],
-  info1: MediaData,
-  info2: AnimeData,
-  info3: ParsedData & { artworks: Artworks },
-  info4: IAnimeInfo[],
-  info5: Anime
+  episodes: Episode[] | null,
+  info1: MediaData | null,
+  info2: AnimeData | null,
+  info3: (ParsedData & { artworks: Artworks }) | null,
+  info4: IAnimeInfo[] | null,
+  info5: Anime | null
 ): AnimeInfo => {
-  info4 = info4.filter(Boolean);
+  // Ensure info4 is an array and filter out null/undefined values
+  info4 = (info4 ?? []).filter(Boolean);
 
+  // Safely merge genres using optional chaining and fallback to an empty array
   const mergedGenres = Array.from(
     new Set([
-      ...(info1 && info1.genres ? info1.genres.filter(Boolean) : []),
-      ...info5.genres.filter(Boolean),
-      ...info4.flatMap((info) => info.genres!.filter(Boolean)),
+      ...(info1?.genres?.filter(Boolean) || []),
+      ...(info5?.genres?.filter(Boolean) || []),
+      ...info4.flatMap((info) => info.genres?.filter(Boolean) || []),
     ])
   );
 
   const mergedTitles = {
-    romaji: (info2 && info2.attributes.titles.en_jp) || info1.title.romaji,
-    english: (info2 && info2.attributes.titles.en) || info1.title.english,
-    native: (info2 && info2.attributes.titles.ja_jp) || info1.title.native,
+    romaji: info1?.title.romaji || info2?.attributes.titles.en_jp || null,
+    english: info1?.title.english || info2?.attributes.titles.en || null,
+    native: info1?.title.native || info2?.attributes.titles.ja_jp || null,
     userPreferred:
-      (info2 && info2.attributes.canonicalTitle) || info1.title.userPreferred,
+      info1?.title.userPreferred || info2?.attributes.canonicalTitle || null,
   };
 
+  // Safely access artwork/poster images with fallback
   const mergedCoverImage =
-    (info3 && info3.artworks.posters[0]) ||
-    info1.coverImage ||
-    (info2 && info2.attributes.posterImage.original);
+    info3?.artworks.posters[0] ||
+    info1?.coverImage ||
+    info2?.attributes.posterImage.original ||
+    null;
 
   const mergedBannerImage =
-    (info3 && info3.artworks.banners[0]) ||
-    info1.bannerImage ||
-    (info2 && info2.attributes.coverImage?.original);
+    info3?.artworks.banners[0] ||
+    info1?.bannerImage ||
+    info2?.attributes.coverImage?.original ||
+    null;
 
+  // Merging episodes with metadata (ensuring all optional fields are safely accessed)
   function mergeEpisodesWithMetadata(
-    episodeData: Episode[],
+    episodeData: Episode[] | null,
     providerEpisodes: { providerId: string; sub: any[]; dub: any[] }[]
   ) {
+    if (!episodeData) return null;
+
     function mapEpisodes(episodes: any[], metadata: Episode[]) {
       return episodes.map((episode, index) => {
         const meta = metadata.find(
           (metaItem) => metaItem.episodeNumber === index + 1
         );
-
         return {
           ...meta,
           id: episode.id || episode.episodeId,
@@ -115,70 +122,105 @@ export const mergeInfo = (
     return mergedEpisodes.length > 0 ? mergedEpisodes : null;
   }
 
-  const filterSub = info4.find(
+  const filterSub = info4?.find(
     (f) => !(f.title as string).toString().includes("(Dub)")
   );
-  const filterDub = info4.find((f) =>
+  const filterDub = info4?.find((f) =>
     (f.title as string).toString().includes("(Dub)")
   );
 
   const formattedEpisodes = mergeEpisodesWithMetadata(episodes, [
     {
       providerId: "gogoanime",
-      sub: filterSub?.episodes!,
-      dub: filterDub?.episodes?.length! > 0 ? filterDub?.episodes! : [],
+      sub: filterSub?.episodes || [],
+      dub: filterDub?.episodes?.length ? filterDub.episodes : [],
     },
     {
       providerId: "hianime",
-      sub: info5.episodes,
-      dub: filterDub?.episodes?.length! > 0 ? info5?.episodes : [],
+      sub: info5?.episodes || [],
+      dub: filterDub?.episodes?.length ? info5?.episodes || [] : [],
     },
   ]);
 
   const mergedInfo: AnimeInfo = {
-    ...info1,
-    clearArt: (info3 && info3.artworks.clearArt[0]) || null,
-    clearLogo: (info3 && info3.artworks.clearLogo[0]) || null,
-    streamEpisodes: formattedEpisodes!,
-    artworks: info3 && info3.artworks,
+    id: String(info1?.id),
+    idMal: info1?.idMal || null,
+    color: info1?.color || null,
+    description: info1?.description || null,
+    averageScore: info1?.averageScore || null,
+    episodes: info1?.episodes || null,
+    duration: info1?.duration || null,
+    startDate: info1?.startDate || null,
+    endDate: info1?.endDate || null,
+    countryOfOrigin: info1?.countryOfOrigin || null,
+    format: info1?.format || null,
+    hashtag: info1?.hashtag || null,
+    season: info1?.season || null,
+    status: info1?.status || null,
+    synonyms: info1?.synonyms || [],
+    studios: info1?.studios || [],
+    tags: info1?.tags || [],
+    nextAiringEpisode: info1?.nextAiringEpisode
+      ? {
+          airingAt: info1?.nextAiringEpisode.airingAt,
+          episode: info1?.nextAiringEpisode.episode,
+          timeUntilAiring: info1?.nextAiringEpisode.timeUntilAiring,
+        }
+      : null,
+    characters: info1?.characters || [],
+    relations: info1?.relations || [],
+    popularity: info1?.popularity || 0,
+    trending: info1?.trending || 0,
+    updatedAt: info1?.updatedAt || null,
+    clearArt: info3?.artworks.clearArt[0] || null,
+    clearLogo: info3?.artworks.clearLogo[0] || null,
+    streamEpisodes: formattedEpisodes || [],
+    artworks:
+      info3?.artworks ||
+      ({
+        banners: [],
+        backgrounds: [],
+        clearLogo: [],
+        clearArt: [],
+        icons: [],
+        posters: [],
+      } as Artworks),
     title: mergedTitles,
     genres: mergedGenres,
-    bannerImage: mergedBannerImage!,
+    bannerImage: mergedBannerImage,
     coverImage: mergedCoverImage,
-    createdAt: info2 && info2.attributes.createdAt,
-    slug: (info2 && info2.attributes.slug) || null,
-    synopsis: (info2 && info2.attributes.synopsis) || null,
-    description: (info2 && info2.attributes.description) || null,
-    coverImageTopOffset:
-      (info2 && info2.attributes.coverImageTopOffset) || null,
-    averageRating: (info2 && info2.attributes.averageRating) || null,
-    userCount: info2 && info2.attributes.userCount,
-    favoritesCount: info2 && info2.attributes.favoritesCount,
-    nextRelease: (info2 && info2.attributes.nextRelease) || null,
-    popularityRank: info2 && info2.attributes.popularityRank,
-    ratingRank: (info2 && info2.attributes.ratingRank) || null,
-    ageRating: (info2 && info2.attributes.ageRating) || null,
-    ageRatingGuide: (info2 && info2.attributes.ageRatingGuide) || null,
-    subtype: (info2 && info2.attributes.subtype) || null,
+    createdAt: info2?.attributes.createdAt || null,
+    slug: info2?.attributes.slug || null,
+    synopsis: info2?.attributes.synopsis || null,
+    coverImageTopOffset: info2?.attributes.coverImageTopOffset || null,
+    averageRating: info2?.attributes.averageRating || null,
+    userCount: info2?.attributes.userCount || 0,
+    favoritesCount: info2?.attributes.favoritesCount || 0,
+    nextRelease: info2?.attributes.nextRelease || null,
+    popularityRank: info2?.attributes.popularityRank || null,
+    ratingRank: info2?.attributes.ratingRank || null,
+    ageRating: info2?.attributes.ageRating || null,
+    ageRatingGuide: info2?.attributes.ageRatingGuide || null,
+    subtype: info2?.attributes.subtype || null,
     posterImages: {
-      tiny: (info2 && info2.attributes.posterImage.tiny) || null,
-      small: (info2 && info2.attributes.posterImage.small) || null,
-      medium: (info2 && info2.attributes.posterImage.medium) || null,
-      large: (info2 && info2.attributes.posterImage.large) || null,
-      original: (info2 && info2.attributes.posterImage.original) || null,
+      tiny: info2?.attributes.posterImage.tiny || null,
+      small: info2?.attributes.posterImage.small || null,
+      medium: info2?.attributes.posterImage.medium || null,
+      large: info2?.attributes.posterImage.large || null,
+      original: info2?.attributes.posterImage.original || null,
     },
     coverImages: {
-      tiny: (info2 && info2.attributes.coverImage?.tiny) || null,
-      small: (info2 && info2.attributes.coverImage?.small) || null,
-      large: (info2 && info2.attributes.coverImage?.large) || null,
-      original: (info2 && info2.attributes.coverImage?.original) || null,
+      tiny: info2?.attributes.coverImage?.tiny || null,
+      small: info2?.attributes.coverImage?.small || null,
+      large: info2?.attributes.coverImage?.large || null,
+      original: info2?.attributes.coverImage?.original || null,
     },
-    episodeCount: (info2 && info2.attributes.episodeCount) || null,
-    episodeLength: (info2 && info2.attributes.episodeLength) || null,
-    totalLength: (info2 && info2.attributes.totalLength) || null,
-    youtubeVideoId: (info2 && info2.attributes.youtubeVideoId) || null,
-    showType: (info2 && info2.attributes.showType) || null,
-    nsfw: info2 && info2.attributes.nsfw,
+    episodeCount: info2?.attributes.episodeCount || null,
+    episodeLength: info2?.attributes.episodeLength || null,
+    totalLength: info2?.attributes.totalLength || null,
+    youtubeVideoId: info2?.attributes.youtubeVideoId || null,
+    showType: info2?.attributes.showType || null,
+    nsfw: info2?.attributes.nsfw || false,
   };
 
   return mergedInfo;
