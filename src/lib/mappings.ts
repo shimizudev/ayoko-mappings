@@ -37,8 +37,6 @@ export const getAnimeInfo = async (id: string) => {
     yugenResult,
   ] = results;
 
-  console.log(gogoResult.sub);
-
   const mergedInfo = mergeInfo(
     animeEpisodes,
     info!,
@@ -67,7 +65,14 @@ export const getAnimeInfo = async (id: string) => {
       type: hianimeResult.matchType,
     },
     tvdb: {
-      id: mergedInfo.streamEpisodes[0].episodes.sub[0].tvdbShowId,
+      id:
+        mergedInfo &&
+        mergedInfo.streamEpisodes &&
+        mergedInfo.streamEpisodes[0].episodes &&
+        mergedInfo.streamEpisodes[0].episodes.sub[0] &&
+        mergedInfo.streamEpisodes[0].episodes.sub[0].tvdbShowId
+          ? mergedInfo.streamEpisodes[0].episodes.sub[0].tvdbShowId
+          : null,
       score: tvdbResult.score,
       type: tvdbResult.matchType,
     },
