@@ -50,7 +50,9 @@ const getDataFromCacheOrFetch = async (
 
 app.get("/trending", async (c) => {
   try {
-    const { page = 1, limit = 20, fields } = c.req.query();
+    let { page, limit = 20, fields } = c.req.query();
+    limit = Number(limit); // Ensure limit is a number
+    let pg = page ? Number(page) : 1;
 
     const selectedFields = fields
       ? fields.split(",").join(" ")
@@ -60,9 +62,39 @@ app.get("/trending", async (c) => {
       trendingCache,
       `trending:${page}:${limit}`,
       async () => {
-        const trendingIds = await getTrendingAnime(Number(page), Number(limit));
-        const animeData = await Promise.all(
-          trendingIds.map(async (id) => {
+        let trendingIds = await getTrendingAnime(Number(pg), limit * 2); // Fetch more initially to account for nulls
+        let animeData = [];
+
+        for (let id of trendingIds) {
+          let anime = await Anime.findOne({ id: String(id) }).select(
+            selectedFields
+          );
+          if (!anime) {
+            try {
+              console.log("Getting info for", id);
+              const info = await getAnimeInfo(String(id));
+              anime = new Anime(info);
+              await anime.save();
+              console.log("Saved info for", id);
+            } catch (error) {
+              console.log("Errored on id", id);
+            }
+          }
+
+          anime = await Anime.findOne({ id: String(id) }).select(
+            selectedFields
+          );
+          if (anime) animeData.push(anime); // Only push if not null
+
+          // Break early if we already have the required number of items
+          if (animeData.length >= limit) break;
+        }
+
+        // If we still don't have enough items, fetch additional data
+        while (animeData.length < limit) {
+          pg++; // Increment the page to fetch more results
+          trendingIds = await getTrendingAnime(Number(pg), limit);
+          for (let id of trendingIds) {
             let anime = await Anime.findOne({ id: String(id) }).select(
               selectedFields
             );
@@ -77,13 +109,15 @@ app.get("/trending", async (c) => {
                 console.log("Errored on id", id);
               }
             }
+
             anime = await Anime.findOne({ id: String(id) }).select(
               selectedFields
             );
+            if (anime) animeData.push(anime);
+            if (animeData.length >= limit) break;
+          }
+        }
 
-            return anime;
-          })
-        );
         return animeData;
       }
     );
@@ -97,7 +131,9 @@ app.get("/trending", async (c) => {
 
 app.get("/popular", async (c) => {
   try {
-    const { page = 1, limit = 20, fields } = c.req.query();
+    let { page, limit = 20, fields } = c.req.query();
+    limit = Number(limit);
+    let pg = page ? Number(page) : 1;
 
     const selectedFields = fields
       ? fields.split(",").join(" ")
@@ -107,9 +143,39 @@ app.get("/popular", async (c) => {
       popularCache,
       `popular:${page}:${limit}`,
       async () => {
-        const popularIds = await getPopularAnime(Number(page), Number(limit));
-        const animeData = await Promise.all(
-          popularIds.map(async (id) => {
+        let popularIds = await getPopularAnime(Number(pg), limit * 2); // Fetch more initially to account for nulls
+        let animeData = [];
+
+        for (let id of popularIds) {
+          let anime = await Anime.findOne({ id: String(id) }).select(
+            selectedFields
+          );
+          if (!anime) {
+            try {
+              console.log("Getting info for", id);
+              const info = await getAnimeInfo(String(id));
+              anime = new Anime(info);
+              await anime.save();
+              console.log("Saved info for", id);
+            } catch (error) {
+              console.log("Errored on id", id);
+            }
+          }
+
+          anime = await Anime.findOne({ id: String(id) }).select(
+            selectedFields
+          );
+          if (anime) animeData.push(anime); // Only push if not null
+
+          // Break early if we already have the required number of items
+          if (animeData.length >= limit) break;
+        }
+
+        // If we still don't have enough items, fetch additional data
+        while (animeData.length < limit) {
+          pg++; // Increment the page to fetch more results
+          popularIds = await getPopularAnime(Number(pg), limit);
+          for (let id of popularIds) {
             let anime = await Anime.findOne({ id: String(id) }).select(
               selectedFields
             );
@@ -124,13 +190,15 @@ app.get("/popular", async (c) => {
                 console.log("Errored on id", id);
               }
             }
+
             anime = await Anime.findOne({ id: String(id) }).select(
               selectedFields
             );
+            if (anime) animeData.push(anime);
+            if (animeData.length >= limit) break;
+          }
+        }
 
-            return anime;
-          })
-        );
         return animeData;
       }
     );
