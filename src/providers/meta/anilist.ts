@@ -132,7 +132,7 @@ interface NextAiringEpisode {
 }
 
 export interface MediaData {
-  id: number;
+  id: string;
   idMal: number | null;
   title: {
     romaji: string | null;
@@ -311,7 +311,7 @@ export class Anilist {
       const media = json.data.Media;
 
       return {
-        id: media.id,
+        id: String(media.id),
         idMal: media.idMal,
         title: media.title,
         bannerImage: media.bannerImage,
