@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@consumet/extensions": "https://github.com/consumet/consumet.ts",
+    "aniwatch": "^1.2.1",
     "cheerio": "^1.0.0",
     "colors": "^1.4.0",
     "hono": "^4.6.1",

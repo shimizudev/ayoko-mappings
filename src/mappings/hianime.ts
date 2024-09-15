@@ -3,7 +3,74 @@ import { Hianime } from "../providers/anime/hianime";
 import { findBestMatchedAnime } from "../title/similarity";
 import type { Result, Title } from "../types/anime";
 import { sanitizeTitle } from "../title/sanitizer";
-import { ANIME } from "@consumet/extensions";
+import { getAnimeAboutInfo, getAnimeEpisodes } from "aniwatch";
+
+export interface Anime {
+  id: string;
+  anilistId: number;
+  malId: number;
+  name: string;
+  poster: string;
+  description: string;
+  stats: Stats;
+  promotionalVideos: PromotionalVideo[];
+  charactersVoiceActors: CharacterVoiceActor[];
+  japanese: string;
+  aired: string;
+  premiered: string;
+  duration: string;
+  status: string;
+  malscore: string;
+  genres: string[];
+  studios: string;
+  producers: string[];
+  episodes: Episode[];
+}
+
+interface Stats {
+  rating: string;
+  quality: string;
+  episodes: EpisodesCount;
+  type: string;
+  duration: string;
+}
+
+interface EpisodesCount {
+  sub: number;
+  dub: number;
+}
+
+interface PromotionalVideo {
+  title: string;
+  source: string;
+  thumbnail: string;
+}
+
+interface CharacterVoiceActor {
+  character: Character;
+  voiceActor: VoiceActor;
+}
+
+interface Character {
+  id: string;
+  poster: string;
+  name: string;
+  cast: string;
+}
+
+interface VoiceActor {
+  id: string;
+  poster: string;
+  name: string;
+  cast: string;
+}
+
+interface Episode {
+  title: string;
+  episodeId: string;
+  number: number;
+  isFiller: boolean;
+}
 
 export const getHianime = async (id: string) => {
   try {
@@ -37,12 +104,25 @@ export const getHianime = async (id: string) => {
       response as unknown as Result[]
     );
 
-    const bestInfo = best?.bestMatch
-      ? await getAnimeInfo(best?.bestMatch.id!)
+    const infoPromise = best?.bestMatch
+      ? getAnimeAboutInfo(best?.bestMatch.id)
       : null;
 
+    const episodesPromise = best?.bestMatch
+      ? getAnimeEpisodes(best?.bestMatch.id)
+      : null;
+
+    const [bestInfo, bestEpisodes] = await Promise.all([
+      infoPromise,
+      episodesPromise,
+    ]);
+
     return {
-      match: bestInfo,
+      match: {
+        ...bestInfo?.anime.info,
+        ...bestInfo?.anime.moreInfo,
+        episodes: bestEpisodes?.episodes,
+      } as Anime,
       score: best?.similarity,
       index: best?.index,
       matchType: best?.matchType,
@@ -55,10 +135,4 @@ export const getHianime = async (id: string) => {
       matchType: "fuzzy",
     };
   }
-};
-
-const getAnimeInfo = async (id: string) => {
-  const zr = new ANIME.Zoro();
-
-  return await zr.fetchAnimeInfo(id);
 };
