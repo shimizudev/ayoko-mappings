@@ -6,7 +6,6 @@ export class Hianime extends BaseProvider {
   override url: string = "https://hianime.to";
   override name: string = "Hianime";
 
-
   constructor(url?: string) {
     super();
     this.url = url ? url : this.url;

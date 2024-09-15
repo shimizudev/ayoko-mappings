@@ -60,7 +60,7 @@ interface Episode {
   airdate: string | null;
   rating: string | null;
   id: string | null;
-  url: string | null;
+  isFiller: boolean | null;
 }
 
 interface Artworks {
@@ -131,8 +131,8 @@ export interface AnimeInfo extends Document {
   clearArt: string | null;
   clearLogo: string | null;
   streamEpisodes: {
-    episodes: Episode;
     providerId: string;
+    episodes: { sub: any[]; dub: any[] };
   }[];
   artworks: Artworks;
   createdAt: string | null;
@@ -270,28 +270,58 @@ const AnimeInfoSchema: Schema = new Schema({
   streamEpisodes: [
     {
       episodes: {
-        tvdbShowId: { type: Number, default: null },
-        tvdbId: { type: Number, default: null },
-        seasonNumber: { type: Number, default: null },
-        episodeNumber: { type: Number, default: null },
-        absoluteEpisodeNumber: { type: Number, default: null },
-        title: {
-          ja: { type: String, default: null },
-          en: { type: String, default: null },
-          "x-jat": { type: String, default: null },
-        },
-        airDate: { type: String, default: null },
-        airDateUtc: { type: String, default: null },
-        runtime: { type: Number, default: null },
-        overview: { type: String, default: null },
-        image: { type: String, default: null },
-        episode: { type: String, default: null },
-        anidbEid: { type: Number, default: null },
-        length: { type: Number, default: null },
-        airdate: { type: String, default: null },
-        rating: { type: String, default: null },
-        id: { type: String, default: null },
-        url: { type: String, default: null },
+        sub: [
+          {
+            tvdbShowId: { type: Number, default: null },
+            tvdbId: { type: Number, default: null },
+            seasonNumber: { type: Number, default: null },
+            episodeNumber: { type: Number, default: null },
+            absoluteEpisodeNumber: { type: Number, default: null },
+            title: {
+              ja: { type: String, default: "" },
+              en: { type: String, default: "" },
+              "x-jat": { type: String, default: "" },
+            },
+            airDate: { type: String, default: null },
+            airDateUtc: { type: String, default: null },
+            runtime: { type: Number, default: null },
+            overview: { type: String, default: null },
+            image: { type: String, default: null },
+            episode: { type: String, default: null },
+            anidbEid: { type: Number, default: null },
+            length: { type: Number, default: null },
+            airdate: { type: String, default: null },
+            rating: { type: String, default: null },
+            id: { type: String, default: null },
+            isFiller: { type: Boolean, default: null },
+          },
+        ],
+        dub: [
+          {
+            tvdbShowId: { type: Number, default: null },
+            tvdbId: { type: Number, default: null },
+            seasonNumber: { type: Number, default: null },
+            episodeNumber: { type: Number, default: null },
+            absoluteEpisodeNumber: { type: Number, default: null },
+            title: {
+              ja: { type: String, default: "" },
+              en: { type: String, default: "" },
+              "x-jat": { type: String, default: "" },
+            },
+            airDate: { type: String, default: null },
+            airDateUtc: { type: String, default: null },
+            runtime: { type: Number, default: null },
+            overview: { type: String, default: null },
+            image: { type: String, default: null },
+            episode: { type: String, default: null },
+            anidbEid: { type: Number, default: null },
+            length: { type: Number, default: null },
+            airdate: { type: String, default: null },
+            rating: { type: String, default: null },
+            id: { type: String, default: null },
+            isFiller: { type: Boolean, default: null },
+          },
+        ],
       },
       providerId: { type: String, default: null },
     },
@@ -334,6 +364,6 @@ AnimeInfoSchema.index(
   { unique: true, partialFilterExpression: { slug: { $ne: null } } }
 );
 
-const Anime = mongoose.model<AnimeInfo>("AnimeInfo", AnimeInfoSchema);
+const Anime = mongoose.model<AnimeInfo>("AnimeData", AnimeInfoSchema);
 
 export default Anime;

@@ -3,13 +3,14 @@ import type { IAnimeInfo } from "@consumet/extensions";
 import type { ParsedData, Artworks } from "../mappings/tvdb";
 import type { AnimeData } from "../providers/meta/kitsu";
 import type { MediaData } from "../providers/meta/anilist";
+import type { Anime } from "../mappings/hianime";
 
 type AnimeInfo = MediaData & {
   clearArt: string | null;
   clearLogo: string | null;
   streamEpisodes: {
-    episodes: Episode & { id: string | null; url: string | null };
     providerId: string;
+    episodes: { sub: any[]; dub: any[] };
   }[];
   artworks: Artworks;
   createdAt: string | null;
@@ -54,14 +55,16 @@ export const mergeInfo = (
   info1: MediaData,
   info2: AnimeData,
   info3: ParsedData & { artworks: Artworks },
-  info4: IAnimeInfo[]
+  info4: IAnimeInfo[],
+  info5: Anime
 ): AnimeInfo => {
   info4 = info4.filter(Boolean);
 
   const mergedGenres = Array.from(
     new Set([
       ...(info1 && info1.genres ? info1.genres.filter(Boolean) : []),
-      ...info4.flatMap((info) => (info ? info.genres! : [])).filter(Boolean),
+      ...info5.genres.filter(Boolean),
+      ...info4.flatMap((info) => info.genres!.filter(Boolean)),
     ])
   );
 
@@ -83,58 +86,60 @@ export const mergeInfo = (
     info1.bannerImage ||
     (info2 && info2.attributes.coverImage?.original);
 
-  const mergedEpisodes = episodes.map((ep) => {
-    const matchingEpisodes =
-      info4 &&
-      info4.flatMap(
-        (info) =>
-          info.episodes?.filter(
-            (ie) => Number(ie.number) === Number(ep.episodeNumber)
-          ) || []
-      );
+  function mergeEpisodesWithMetadata(
+    episodeData: Episode[],
+    providerEpisodes: { providerId: string; sub: any[]; dub: any[] }[]
+  ) {
+    function mapEpisodes(episodes: any[], metadata: Episode[]) {
+      return episodes.map((episode, index) => {
+        const meta = metadata.find(
+          (metaItem) => metaItem.episodeNumber === index + 1
+        );
 
-    const mappedEpisodes = matchingEpisodes.map((matchedEp) => {
-      const providerId = matchedEp?.id.includes("$") ? "hianime" : "gogoanime";
-
-      return {
-        episodes: {
-          ...ep,
-          id: matchedEp.id?.includes("$")
-            ? `${matchedEp.id.split("$")[0]}?ep=${matchedEp.id.split("$")[2]}`
-            : matchedEp.id || undefined,
-          url: matchedEp.url || undefined,
-        },
-        providerId,
-      };
-    });
-
-    if (mappedEpisodes.length === 0) {
-      return {
-        episodes: {
-          ...ep,
-          id: undefined,
-          url: undefined,
-        },
-        providerId: undefined,
-      };
+        return {
+          ...meta,
+          id: episode.id || episode.episodeId,
+          isFiller: episode.isFiller || false,
+        };
+      });
     }
 
-    return mappedEpisodes;
-  });
+    const mergedEpisodes = providerEpisodes.map((providerData) => ({
+      providerId: providerData.providerId,
+      episodes: {
+        sub: mapEpisodes(providerData.sub, episodeData),
+        dub: mapEpisodes(providerData.dub, episodeData),
+      },
+    }));
 
-  const flattenedMergedEpisodes = mergedEpisodes.flat() as {
-    episodes: Episode & { id: string | null; url: string | null };
-    providerId: string;
-  }[];
+    return mergedEpisodes.length > 0 ? mergedEpisodes : null;
+  }
+
+  const filterSub = info4.find(
+    (f) => !(f.title as string).toString().includes("(Dub)")
+  );
+  const filterDub = info4.find((f) =>
+    (f.title as string).toString().includes("(Dub)")
+  );
+
+  const formattedEpisodes = mergeEpisodesWithMetadata(episodes, [
+    {
+      providerId: "gogoanime",
+      sub: filterSub?.episodes!,
+      dub: filterDub?.episodes?.length! > 0 ? filterDub?.episodes! : [],
+    },
+    {
+      providerId: "hianime",
+      sub: info5.episodes,
+      dub: filterDub?.episodes?.length! > 0 ? info5?.episodes : [],
+    },
+  ]);
 
   const mergedInfo: AnimeInfo = {
     ...info1,
     clearArt: (info3 && info3.artworks.clearArt[0]) || null,
     clearLogo: (info3 && info3.artworks.clearLogo[0]) || null,
-    streamEpisodes: flattenedMergedEpisodes.map((episode) => ({
-      episodes: episode.episodes,
-      providerId: episode.providerId,
-    })),
+    streamEpisodes: formattedEpisodes!,
     artworks: info3 && info3.artworks,
     title: mergedTitles,
     genres: mergedGenres,
