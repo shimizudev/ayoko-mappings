@@ -7,7 +7,7 @@ import { Anilist } from "../providers/meta/anilist";
 import { getYugen } from "../mappings/yugen";
 import { getAnimeEpisodeMetadata } from "../episode/cover";
 
-export const getAnimeInfo = async (id: string, dub = false) => {
+export const getAnimeInfo = async (id: string) => {
   const anilist = new Anilist();
   const anilistI = anilist.get(id);
   const episodes = getAnimeEpisodeMetadata(id);
@@ -37,12 +37,15 @@ export const getAnimeInfo = async (id: string, dub = false) => {
     yugenResult,
   ] = results;
 
+  console.log(gogoResult.sub);
+
   const mergedInfo = mergeInfo(
     animeEpisodes,
     info!,
     kitsuResult.match!,
     tvdbResult.match!,
-    [!dub ? gogoResult.sub.match! : gogoResult.dub.match!, hianimeResult.match!]
+    [gogoResult.sub.match!, gogoResult.dub.match!]!,
+    hianimeResult.match!
   );
 
   const mappings = {
@@ -64,7 +67,7 @@ export const getAnimeInfo = async (id: string, dub = false) => {
       type: hianimeResult.matchType,
     },
     tvdb: {
-      id: mergedInfo.streamEpisodes[0].episodes.tvdbShowId,
+      id: mergedInfo.streamEpisodes[0].episodes.sub[0].tvdbShowId,
       score: tvdbResult.score,
       type: tvdbResult.matchType,
     },
