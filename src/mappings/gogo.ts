@@ -3,7 +3,11 @@ import { Gogoanime } from "../providers/anime/gogo";
 import { findBestMatchedAnime } from "../title/similarity";
 import type { Result, Title } from "../types/anime";
 import { sanitizeTitle } from "../title/sanitizer";
-import { ANIME } from "@consumet/extensions";
+import {
+  ANIME,
+  type IAnimeInfo,
+  type IAnimeResult,
+} from "@consumet/extensions";
 
 export const getGogo = async (id: string) => {
   try {
@@ -14,7 +18,7 @@ export const getGogo = async (id: string) => {
     const title = info?.title;
 
     const response = await gogo.search(
-      sanitizeTitle(title?.english || title?.romaji!)
+      sanitizeTitle(title?.english ?? title?.romaji!)
     );
     const dub = response?.filter((r) => (r.title as string).includes("(Dub)"));
     const sub = response?.filter((r) => !(r.title as string).includes("(Dub)"));
@@ -29,10 +33,10 @@ export const getGogo = async (id: string) => {
         : { bestMatch: null, similarity: 0, index: -1, matchType: "fuzzy" };
 
     const subInfo = bestSub?.bestMatch
-      ? getAnimeInfo(bestSub?.bestMatch.id!)
+      ? getAnimeInfo(bestSub?.bestMatch.id)
       : Promise.resolve(null);
     const dubInfo = bestDub?.bestMatch
-      ? getAnimeInfo(bestDub?.bestMatch.id!)
+      ? getAnimeInfo(bestDub?.bestMatch.id)
       : Promise.resolve(null);
 
     const [subResult, dubResult] = await Promise.all([subInfo, dubInfo]);
@@ -42,28 +46,79 @@ export const getGogo = async (id: string) => {
         match: subResult,
         score: bestSub?.similarity,
         index: bestSub?.index,
-        matchType: bestSub?.matchType,
+        matchType: bestSub?.matchType as "strict" | "fuzzy",
       },
       dub: {
         match: dubResult,
-        score: bestDub?.similarity || 0,
-        index: bestDub?.index || -1,
-        matchType: bestSub?.matchType || "fuzzy",
+        score: bestDub?.similarity ?? 0,
+        index: bestDub?.index ?? -1,
+        matchType: bestSub?.matchType ?? ("fuzzy" as "strict" | "fuzzy"),
       },
     };
   } catch (error) {
+    const defaultAnimeResult: IAnimeResult = {
+      id: "",
+      title: "",
+      url: undefined,
+      image: undefined,
+      imageHash: undefined,
+      cover: undefined,
+      coverHash: undefined,
+      status: undefined,
+      rating: undefined,
+      type: undefined,
+      releaseDate: undefined,
+    };
+    const defaultAnimeInfo: IAnimeInfo = {
+      ...defaultAnimeResult,
+      malId: undefined,
+      genres: [],
+      description: undefined,
+      status: undefined,
+      totalEpisodes: undefined,
+      subOrDub: undefined, // deprecated
+      hasSub: false,
+      hasDub: false,
+      synonyms: [],
+      countryOfOrigin: undefined,
+      isAdult: false,
+      isLicensed: false,
+      season: undefined,
+      studios: [],
+      color: undefined,
+      cover: undefined,
+      trailer: {
+        id: "",
+        site: "",
+        thumbnail: "",
+      },
+      episodes: [],
+      startDate: {
+        year: undefined,
+        month: undefined,
+        day: undefined,
+      },
+      endDate: {
+        year: undefined,
+        month: undefined,
+        day: undefined,
+      },
+      recommendations: [],
+      relations: [],
+    };
+
     return {
       sub: {
-        match: null,
+        match: defaultAnimeInfo,
         score: 0,
         index: -1,
-        matchType: "fuzzy",
+        matchType: "fuzzy" as "strict" | "fuzzy",
       },
       dub: {
-        match: null,
+        match: defaultAnimeInfo,
         score: 0,
         index: -1,
-        matchType: "fuzzy",
+        matchType: "fuzzy" as "strict" | "fuzzy",
       },
     };
   }

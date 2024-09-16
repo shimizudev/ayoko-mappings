@@ -3,7 +3,6 @@ import { Hianime } from "../providers/anime/hianime";
 import { findBestMatchedAnime } from "../title/similarity";
 import type { Result, Title } from "../types/anime";
 import { sanitizeTitle } from "../title/sanitizer";
-import { getAnimeAboutInfo, getAnimeEpisodes } from "aniwatch";
 
 export interface Anime {
   id: string;
@@ -104,12 +103,10 @@ export const getHianime = async (id: string) => {
       response as unknown as Result[]
     );
 
-    const infoPromise = best?.bestMatch
-      ? getAnimeAboutInfo(best?.bestMatch.id)
-      : null;
+    const infoPromise = best?.bestMatch ? hi.getInfo(best?.bestMatch.id) : null;
 
     const episodesPromise = best?.bestMatch
-      ? getAnimeEpisodes(best?.bestMatch.id)
+      ? hi.getAnimeEpisodes(best?.bestMatch.id)
       : null;
 
     const [bestInfo, bestEpisodes] = await Promise.all([
@@ -125,14 +122,45 @@ export const getHianime = async (id: string) => {
       } as Anime,
       score: best?.similarity,
       index: best?.index,
-      matchType: best?.matchType,
+      matchType: best?.matchType as "strict" | "fuzzy",
     };
   } catch (error) {
+    console.log(error);
+
     return {
-      match: null,
+      match: {
+        id: "",
+        anilistId: 0,
+        malId: 0,
+        name: "",
+        poster: "",
+        description: "",
+        stats: {
+          rating: "",
+          quality: "",
+          episodes: {
+            sub: 0,
+            dub: 0,
+          },
+          type: "",
+          duration: "",
+        },
+        promotionalVideos: [],
+        charactersVoiceActors: [],
+        japanese: "",
+        aired: "",
+        premiered: "",
+        duration: "",
+        status: "",
+        malscore: "",
+        genres: [],
+        studios: "",
+        producers: [],
+        episodes: [],
+      } as Anime,
       score: 0,
       index: -1,
-      matchType: "fuzzy",
+      matchType: "fuzzy" as "strict" | "fuzzy",
     };
   }
 };

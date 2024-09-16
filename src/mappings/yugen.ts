@@ -27,7 +27,12 @@ export const getYugen = async (id: string) => {
     };
   } catch (error) {
     return {
-      match: null,
+      match: {
+        id: null,
+        title: "",
+        poster: "",
+        url: "",
+      },
       score: 0,
       index: -1,
       matchType: "fuzzy",
