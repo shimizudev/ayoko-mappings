@@ -39,11 +39,11 @@ export const getAnimeInfo = async (id: string) => {
 
   const mergedInfo = mergeInfo(
     animeEpisodes,
-    info!,
-    kitsuResult.match!,
-    tvdbResult.match!,
-    [gogoResult.sub.match!, gogoResult.dub.match!]!,
-    hianimeResult.match!
+    info,
+    kitsuResult.match,
+    tvdbResult.match,
+    [gogoResult.sub.match!, gogoResult.dub.match!],
+    hianimeResult.match
   );
 
   const mappings = {
@@ -54,7 +54,7 @@ export const getAnimeInfo = async (id: string) => {
         type: gogoResult.sub.matchType,
       },
       dub: {
-        id: gogoResult.dub.match?.id || null,
+        id: gogoResult.dub.match?.id ?? null,
         score: gogoResult.dub.score,
         type: gogoResult.dub.matchType,
       },
