@@ -206,7 +206,7 @@ export class Anilist {
       const res = await this.request(this.apiUrl, {
         method: "POST",
         json: {
-          query: `query ($mediaId: Int, $isMain: Boolean) {
+          query: /* GraphQL */  `query ($mediaId: Int, $isMain: Boolean) {
                     Media(id: $mediaId) {
                       bannerImage
                       coverImage {
