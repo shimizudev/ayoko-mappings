@@ -14,6 +14,12 @@ const ANILIST_API = "https://graphql.anilist.co";
 // Interfaces for AniList responses
 interface AnimeData {
   id: number;
+  status:
+    | "RELEASING"
+    | "FINISHED"
+    | "HIATUS"
+    | "CANCELLED"
+    | "NOT_YET_RELEASED";
 }
 
 interface TrendingAnimeResponse {
@@ -38,6 +44,7 @@ query ($page: Int, $perPage: Int) {
   Page(page: $page, perPage: $perPage) {
     media(sort: TRENDING_DESC, type: ANIME) {
       id
+      status
     }
   }
 }
@@ -48,6 +55,7 @@ query ($page: Int, $perPage: Int) {
   Page(page: $page, perPage: $perPage) {
     media(sort: POPULARITY_DESC, type: ANIME) {
       id
+      status
     }
   }
 }
@@ -67,7 +75,7 @@ async function fetchFromAniList<T>(query: string, variables: any): Promise<T> {
     const response = await ky.post(`${proxyUrl}/${ANILIST_API}`, {
       json: { query, variables },
       headers: {
-        Origin: "https://ayoko.fun", // Add your origin
+        Origin: "https://ayoko.fun",
       },
     });
     return await response.json();
@@ -89,7 +97,9 @@ export async function getTrendingAnime(
       perPage,
     }
   );
-  return response.data.Page.media.map((anime) => anime.id);
+  return response.data.Page.media
+    .filter((anime) => anime.status !== "NOT_YET_RELEASED")
+    .map((anime) => anime.id);
 }
 
 // Function to get popular anime
@@ -101,5 +111,7 @@ export async function getPopularAnime(
     page,
     perPage,
   });
-  return response.data.Page.media.map((anime) => anime.id);
+  return response.data.Page.media
+    .filter((anime) => anime.status !== "NOT_YET_RELEASED")
+    .map((anime) => anime.id);
 }

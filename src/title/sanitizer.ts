@@ -1,5 +1,7 @@
 // Sanitizes title, removes special characters and spaces, and converts to lowercase, removes unncessary words, and normalizes characters
 export function sanitizeTitle(title: string): string {
+  if (!title || title === null) title = "";
+
   let sanitizedTitle = title.toLowerCase();
 
   sanitizedTitle = sanitizedTitle.replace(/\b(season|cour|part)\b/g, "");
@@ -12,7 +14,7 @@ export function sanitizeTitle(title: string): string {
     .replace(/yaa/g, "ya");
 
   sanitizedTitle = sanitizedTitle.replace(
-    /\b(uncut|uncensored|dub|censored|sub)\b/g,
+    /\b(uncut|uncensored|dub|censored|sub|dubbed|subbed)\b/g,
     ""
   );
 

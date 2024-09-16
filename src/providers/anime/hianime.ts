@@ -718,10 +718,6 @@ export class Hianime extends BaseProvider {
         console.log(`Request failed with status ${status}. Retrying...`);
         return this.request(url, requestInit, retries + 1);
       } else {
-        console.log(
-          "Request failed... body:",
-          await (error as HTTPError).response.text()
-        );
         throw new Error(
           `Request failed with status ${status || "unknown"} on ${
             (error as HTTPError).request.url
