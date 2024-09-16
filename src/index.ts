@@ -235,7 +235,14 @@ app.get("/info/:id", async (c) => {
 });
 
 app.get("/search", async (c) => {
-  const { query, limit = 20, page = 1, fields } = c.req.query();
+  const {
+    query,
+    limit = 20,
+    page = 1,
+    fields,
+    sort,
+    order = "asc",
+  } = c.req.query();
   const skip = (Number(page) - 1) * Number(limit);
 
   if (!query) {
@@ -246,16 +253,25 @@ app.get("/search", async (c) => {
     "title id idMal coverImage bannerImage mappings episodes averageScore genres";
   const selectedFields = fields ? fields.split(",").join(" ") : defaultFields;
 
+  const sortFields: any = {
+    averageScore: { averageScore: order === "asc" ? 1 : -1 },
+    popularity: { popularity: order === "asc" ? 1 : -1 },
+    trending: { trending: order === "asc" ? 1 : -1 },
+    episodes: { episodes: order === "asc" ? 1 : -1 },
+    title: { "title.romaji": order === "asc" ? 1 : -1 },
+    createdAt: { createdAt: order === "asc" ? 1 : -1 },
+    updatedAt: { updatedAt: order === "asc" ? 1 : -1 },
+  };
+
+  const sortOption = sort ? sortFields[sort] || {} : {};
+
   const animeResults = await Anime.find({
-    $or: [
-      { "title.romaji": { $regex: query, $options: "i" } },
-      { "title.english": { $regex: query, $options: "i" } },
-      { "title.native": { $regex: query, $options: "i" } },
-    ],
+    $text: { $search: query },
   })
     .select(selectedFields)
     .skip(skip)
-    .limit(Number(limit));
+    .limit(Number(limit))
+    .sort(sortOption);
 
   if (animeResults.length === 0) {
     return c.json({ message: "No anime found" }, 404);
@@ -298,17 +314,15 @@ app.get("/advanced-search", async (c) => {
     limit = 20,
     page = 1,
     fields,
+    sort,
+    order = "asc",
   } = c.req.query();
   const skip = (Number(page) - 1) * Number(limit);
 
   const searchCriteria: any = {};
 
   if (title) {
-    searchCriteria.$or = [
-      { "title.romaji": { $regex: title, $options: "i" } },
-      { "title.english": { $regex: title, $options: "i" } },
-      { "title.native": { $regex: title, $options: "i" } },
-    ];
+    searchCriteria.$text = { $search: title };
   }
 
   if (id) searchCriteria.id = id;
@@ -351,14 +365,27 @@ app.get("/advanced-search", async (c) => {
   if (excludingFormat)
     searchCriteria.format = { $nin: excludingFormat.split(",") };
 
-  const defaultFields =
-    "title id idMal coverImage bannerImage mappings episodes averageScore genres";
-  const selectedFields = fields ? fields.split(",").join(" ") : defaultFields;
+  const sortFields: any = {
+    averageScore: { averageScore: order === "asc" ? 1 : -1 },
+    popularity: { popularity: order === "asc" ? 1 : -1 },
+    trending: { trending: order === "asc" ? 1 : -1 },
+    episodes: { episodes: order === "asc" ? 1 : -1 },
+    title: { "title.romaji": order === "asc" ? 1 : -1 },
+    createdAt: { createdAt: order === "asc" ? 1 : -1 },
+    updatedAt: { updatedAt: order === "asc" ? 1 : -1 },
+  };
+
+  const sortOption = sort ? sortFields[sort] || {} : {};
 
   const animeResults = await Anime.find(searchCriteria)
-    .select(selectedFields)
+    .select(
+      fields
+        ? fields.split(",").join(" ")
+        : "title id idMal coverImage bannerImage mappings episodes averageScore genres"
+    )
     .skip(skip)
-    .limit(Number(limit));
+    .limit(Number(limit))
+    .sort(sortOption);
 
   if (animeResults.length === 0) {
     return c.json({ message: "No anime found" }, 404);
