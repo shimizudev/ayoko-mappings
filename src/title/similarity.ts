@@ -9,53 +9,97 @@ interface Title {
   userPreferred: string;
 }
 
+export type StringMatchType = "strict" | "loose" | "fuzzy";
+
 interface MatchResult {
   index: number;
   similarity: number;
   bestMatch: Result;
-  matchType: "strict" | "fuzzy";
+  matchType: StringMatchType;
 }
+
+const SIMILARITY_THRESHOLD = 0.7;
 
 export function findBestMatchedAnime(
   title: Title | undefined,
   titles: Result[] | undefined
 ): MatchResult | null {
-  if (!title || !titles || titles.length === 0) {
-    return null;
-  }
+  if (!isValidInput(title, titles)) return null;
 
-  const sanitizedTitleOptions = [
-    sanitizeTitle(title.romaji ?? ""),
-    sanitizeTitle(title.english ?? ""),
-    sanitizeTitle(title.native ?? ""),
-    sanitizeTitle(title.userPreferred ?? ""),
-  ].filter(Boolean);
+  const sanitizedTitleOptions = getSanitizedTitleOptions(title!);
+  if (sanitizedTitleOptions.length === 0) return null;
 
-  if (sanitizedTitleOptions.length === 0) {
-    return null;
-  }
+  const sanitizedResults = getSanitizedResults(titles!);
 
-  const sanitizedResults = titles.map((result) => ({
+  const strictMatch = findStrictMatch(sanitizedTitleOptions, sanitizedResults);
+  if (strictMatch) return strictMatch;
+
+  const looseMatch = findLooseMatch(sanitizedTitleOptions, sanitizedResults);
+  if (looseMatch) return looseMatch;
+
+  return findFuzzyMatch(sanitizedTitleOptions, sanitizedResults);
+}
+
+function isValidInput(
+  title: Title | undefined,
+  titles: Result[] | undefined
+): boolean {
+  return !!title && !!titles && titles.length > 0;
+}
+
+function getSanitizedTitleOptions(title: Title): string[] {
+  return [title.romaji, title.english, title.native, title.userPreferred]
+    .filter((t): t is string => !!t)
+    .map(sanitizeTitle);
+}
+
+function getSanitizedResults(
+  titles: Result[]
+): (Result & { sanitizedTitle: string })[] {
+  return titles.map((result) => ({
     ...result,
     sanitizedTitle: sanitizeTitle(result.title as string),
   }));
+}
 
-  // First check for strict matches (works mostly with title sanitized, 90% of the time is strict matches)
+function findStrictMatch(
+  sanitizedTitleOptions: string[],
+  sanitizedResults: (Result & { sanitizedTitle: string })[]
+): MatchResult | null {
   for (let i = 0; i < sanitizedResults.length; i++) {
     if (sanitizedTitleOptions.includes(sanitizedResults[i].sanitizedTitle)) {
-      return {
-        index: i,
-        similarity: 1,
-        bestMatch: sanitizedResults[i],
-        matchType: "strict",
-      };
+      return createMatchResult(i, 1, sanitizedResults[i], "strict");
     }
   }
+  return null;
+}
 
+function findLooseMatch(
+  sanitizedTitleOptions: string[],
+  sanitizedResults: (Result & { sanitizedTitle: string })[]
+): MatchResult | null {
+  for (let i = 0; i < sanitizedResults.length; i++) {
+    const sanitizedResult = sanitizedResults[i].sanitizedTitle;
+    const isLooseMatch = sanitizedTitleOptions.some(
+      (sanitizedTitle) =>
+        sanitizedResult.includes(sanitizedTitle) ||
+        sanitizedTitle.includes(sanitizedResult)
+    );
+
+    if (isLooseMatch) {
+      return createMatchResult(i, 0.8, sanitizedResults[i], "loose");
+    }
+  }
+  return null;
+}
+
+function findFuzzyMatch(
+  sanitizedTitleOptions: string[],
+  sanitizedResults: (Result & { sanitizedTitle: string })[]
+): MatchResult | null {
   let bestMatchIndex = -1;
   let highestSimilarity = 0;
 
-  // Using fuzzy match (it works when strict match doesn't work)
   sanitizedResults.forEach((result, index) => {
     const bestMatch = stringSimilarity.findBestMatch(
       result.sanitizedTitle,
@@ -68,14 +112,23 @@ export function findBestMatchedAnime(
     }
   });
 
-  if (bestMatchIndex === -1) {
+  if (highestSimilarity < SIMILARITY_THRESHOLD || bestMatchIndex === -1) {
     return null;
   }
 
-  return {
-    index: bestMatchIndex,
-    similarity: highestSimilarity,
-    bestMatch: sanitizedResults[bestMatchIndex],
-    matchType: "fuzzy",
-  };
+  return createMatchResult(
+    bestMatchIndex,
+    highestSimilarity,
+    sanitizedResults[bestMatchIndex],
+    "fuzzy"
+  );
+}
+
+function createMatchResult(
+  index: number,
+  similarity: number,
+  bestMatch: Result & { sanitizedTitle: string },
+  matchType: StringMatchType
+): MatchResult {
+  return { index, similarity, bestMatch, matchType };
 }

@@ -4,6 +4,7 @@
   "type": "module",
   "devDependencies": {
     "@types/bun": "latest",
+    "@types/jaro-winkler": "^0.2.3",
     "@types/node-cron": "^3.0.11",
     "@types/string-similarity": "^4.0.2"
   },
@@ -15,10 +16,13 @@
     "aniwatch": "^1.2.1",
     "cheerio": "^1.0.0",
     "colors": "^1.4.0",
+    "compute-cosine-similarity": "^1.1.0",
     "hono": "^4.6.1",
+    "jaro-winkler": "^0.2.8",
     "ky": "^1.7.2",
     "mongoose": "^8.6.2",
     "node-cron": "^3.0.3",
-    "string-similarity": "^4.0.4"
+    "string-similarity": "^4.0.4",
+    "talisman": "^1.1.4"
   }
 }

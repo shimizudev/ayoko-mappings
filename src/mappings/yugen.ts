@@ -1,6 +1,9 @@
 import { Anilist } from "../providers/meta/anilist";
 import { Yugenanime } from "../providers/anime/yugen";
-import { findBestMatchedAnime } from "../title/similarity";
+import {
+  findBestMatchedAnime,
+  type StringMatchType,
+} from "../title/similarity";
 import type { Result, Title } from "../types/anime";
 import { sanitizeTitle } from "../title/sanitizer";
 
@@ -23,7 +26,7 @@ export const getYugen = async (id: string) => {
       match: best?.bestMatch,
       score: best?.similarity,
       index: best?.index,
-      matchType: best?.matchType,
+      matchType: best?.matchType as StringMatchType,
     };
   } catch (error) {
     return {
@@ -35,7 +38,7 @@ export const getYugen = async (id: string) => {
       },
       score: 0,
       index: -1,
-      matchType: "fuzzy",
+      matchType: "fuzzy" as StringMatchType,
     };
   }
 };

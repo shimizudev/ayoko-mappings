@@ -1,6 +1,9 @@
 import { Anilist } from "../providers/meta/anilist";
 import { Hianime } from "../providers/anime/hianime";
-import { findBestMatchedAnime } from "../title/similarity";
+import {
+  findBestMatchedAnime,
+  type StringMatchType,
+} from "../title/similarity";
 import type { Result, Title } from "../types/anime";
 import { sanitizeTitle } from "../title/sanitizer";
 
@@ -122,7 +125,7 @@ export const getHianime = async (id: string) => {
       } as Anime,
       score: best?.similarity,
       index: best?.index,
-      matchType: best?.matchType as "strict" | "fuzzy",
+      matchType: best?.matchType as StringMatchType,
     };
   } catch (error) {
     console.log(error);
@@ -160,7 +163,7 @@ export const getHianime = async (id: string) => {
       } as Anime,
       score: 0,
       index: -1,
-      matchType: "fuzzy" as "strict" | "fuzzy",
+      matchType: "fuzzy" as StringMatchType,
     };
   }
 };

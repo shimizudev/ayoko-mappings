@@ -1,6 +1,6 @@
 import { Anilist } from "../providers/meta/anilist";
 import { Gogoanime } from "../providers/anime/gogo";
-import { findBestMatchedAnime } from "../title/similarity";
+import { findBestMatchedAnime, type StringMatchType } from "../title/similarity";
 import type { Result, Title } from "../types/anime";
 import { sanitizeTitle } from "../title/sanitizer";
 import {
@@ -46,13 +46,13 @@ export const getGogo = async (id: string) => {
         match: subResult,
         score: bestSub?.similarity,
         index: bestSub?.index,
-        matchType: bestSub?.matchType as "strict" | "fuzzy",
+        matchType: bestSub?.matchType as StringMatchType,
       },
       dub: {
         match: dubResult,
         score: bestDub?.similarity ?? 0,
         index: bestDub?.index ?? -1,
-        matchType: bestSub?.matchType ?? ("fuzzy" as "strict" | "fuzzy"),
+        matchType: bestSub?.matchType ?? ("fuzzy" as StringMatchType),
       },
     };
   } catch (error) {
@@ -112,13 +112,13 @@ export const getGogo = async (id: string) => {
         match: defaultAnimeInfo,
         score: 0,
         index: -1,
-        matchType: "fuzzy" as "strict" | "fuzzy",
+        matchType: "fuzzy" as StringMatchType,
       },
       dub: {
         match: defaultAnimeInfo,
         score: 0,
         index: -1,
-        matchType: "fuzzy" as "strict" | "fuzzy",
+        matchType: "fuzzy" as StringMatchType,
       },
     };
   }

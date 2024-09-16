@@ -1,5 +1,8 @@
 import { Kitsu, type AnimeData } from "../providers/meta/kitsu";
-import { findBestMatchedAnime } from "../title/similarity";
+import {
+  findBestMatchedAnime,
+  type StringMatchType,
+} from "../title/similarity";
 import { sanitizeTitle } from "../title/sanitizer";
 import { Anilist } from "../providers/meta/anilist";
 import type { Title, Result } from "../types/anime";
@@ -38,7 +41,7 @@ export const getKitsu = async (id: string) => {
       match: best?.bestMatch as unknown as KitsuReturn,
       score: best?.similarity,
       index: best?.index,
-      matchType: best?.matchType as "strict" | "fuzzy",
+      matchType: best?.matchType as StringMatchType,
     };
   } catch (error) {
     return {
@@ -134,7 +137,7 @@ export const getKitsu = async (id: string) => {
       } as KitsuReturn,
       score: 0,
       index: -1,
-      matchType: "fuzzy" as "strict" | "fuzzy",
+      matchType: "fuzzy" as StringMatchType,
     };
   }
 };

@@ -1,7 +1,10 @@
 import { TheTVDB } from "../providers/meta/tvdb";
 import { Anilist } from "../providers/meta/anilist";
 import { sanitizeTitle } from "../title/sanitizer";
-import { findBestMatchedAnime } from "../title/similarity";
+import {
+  findBestMatchedAnime,
+  type StringMatchType,
+} from "../title/similarity";
 import type { Result, Title } from "../types/anime";
 import ky from "ky";
 import { load, type Cheerio } from "cheerio";
@@ -381,7 +384,7 @@ export const getTVDB = async (id: string) => {
       ),
       score: best?.similarity,
       index: best?.index,
-      matchType: best?.matchType,
+      matchType: best?.matchType as StringMatchType,
     };
   } catch (error) {
     return {
@@ -431,7 +434,7 @@ export const getTVDB = async (id: string) => {
       },
       score: 0,
       index: -1,
-      matchType: "fuzzy",
+      matchType: "fuzzy" as StringMatchType,
     };
   }
 };
