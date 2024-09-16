@@ -86,7 +86,7 @@ export const mergeInfo = (
     null;
 
   const mergedBannerImage =
-    info3?.artworks.banners[0] ||
+    info3?.artworks.backgrounds[0] ||
     info1?.bannerImage ||
     info2?.attributes.coverImage?.original ||
     null;
