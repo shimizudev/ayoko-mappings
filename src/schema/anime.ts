@@ -159,7 +159,6 @@ export interface AnimeInfo extends Document {
 const AnimeInfoSchema: Schema = new Schema({
   id: { type: Number, default: null, unique: true, sparse: true },
   idMal: { type: Number, default: null, unique: true, sparse: true },
-  slug: { type: String, default: null },
   title: {
     romaji: { type: String, default: "", index: true },
     english: { type: String, default: "", index: true },
@@ -359,10 +358,13 @@ const AnimeInfoSchema: Schema = new Schema({
 
 AnimeInfoSchema.index({ id: 1 }, { unique: true, sparse: true });
 AnimeInfoSchema.index({ slug: 1 }, { unique: true, sparse: true });
-AnimeInfoSchema.index(
-  { slug: 1 },
-  { unique: true, partialFilterExpression: { slug: { $ne: null } } }
-);
+AnimeInfoSchema.index({
+  "title.romaji": "text",
+  "title.english": "text",
+  "title.native": "text",
+  synonyms: "text",
+  description: "text",
+});
 
 const Anime = mongoose.model<AnimeInfo>("AnimeData", AnimeInfoSchema);
 
