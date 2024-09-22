@@ -17,6 +17,7 @@
     "cheerio": "^1.0.0",
     "colors": "^1.4.0",
     "compute-cosine-similarity": "^1.1.0",
+    "fastest-levenshtein": "^1.0.16",
     "hono": "^4.6.1",
     "jaro-winkler": "^0.2.8",
     "ky": "^1.7.2",
