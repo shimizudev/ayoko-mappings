@@ -1,6 +1,9 @@
 import { Anilist } from "../providers/meta/anilist";
 import { Gogoanime } from "../providers/anime/gogo";
-import { findBestMatchedAnime, type StringMatchType } from "../title/similarity";
+import {
+  findBestMatchedAnime,
+  type StringMatchType,
+} from "../title/similarity";
 import type { Result, Title } from "../types/anime";
 import { sanitizeTitle } from "../title/sanitizer";
 import {
@@ -18,11 +21,44 @@ export const getGogo = async (id: string) => {
     const ani = new Anilist();
 
     const info = await ani.get(id);
-    const title = info?.title;
+
+    // I hate these all.... FUCK YOU GOGOANIME FOR HAVING SUCH A SHITTY TITLE PARSING
+    const title = {
+      english:
+        info?.title.english &&
+        info?.title.english
+          .toLowerCase()
+          .replaceAll("tower of god season 2", "Kami no Tou: Ouji no Kikan"),
+      romaji:
+        info?.title.romaji &&
+        info?.title.romaji
+          .toLowerCase()
+          .replaceAll(
+            "kami no tou: tower of god - ouji no kikan",
+            "Kami no Tou: Ouji no Kikan"
+          ),
+      native:
+        info?.title.native &&
+        info?.title.native
+          .toLowerCase()
+          .replaceAll(
+            "神之塔 -tower of god- 王子の帰還",
+            "Kami no Tou: Ouji no Kikan"
+          ),
+      userPreferred:
+        info?.title.userPreferred &&
+        info?.title.userPreferred
+          .toLowerCase()
+          .replaceAll(
+            "kami no tou: tower of god - ouji no kikan",
+            "Kami no Tou: Ouji no Kikan"
+          ),
+    };
 
     const response = await gogo.search(
       sanitizeTitle(title?.english ?? title?.romaji!)
     );
+
     const dub = response?.filter((r) => (r.title as string).includes("(Dub)"));
     const sub = response?.filter((r) => !(r.title as string).includes("(Dub)"));
 
